@@ -1,0 +1,99 @@
+name: Import Schema
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_owner:
+        required: true
+        type: string
+      source_repo_name:
+        required: true
+        type: string
+      source_ref:
+        required: true
+        type: string
+      source_schema_root:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish-schema:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Restrict caller to typeforged org
+        if: inputs.source_owner != 'typeforged'
+        run: |
+          echo "Unauthorized caller: ${{ inputs.source_owner }}/${{ inputs.source_repo_name }}"
+          exit 1
+
+      - name: Get schema version from ref
+        id: version-suffix
+        uses: cmdforge/actions/version-suffix@main
+        with:
+          version: ${{ inputs.source_ref }}
+          
+      - name: Fail if publish tag already exists
+        run: |
+          VERSION="${{ steps.version-suffix.outputs.suffix }}"
+          TAG="${{ inputs.source_repo_name }}-$VERSION"
+
+          if git ls-remote --exit-code --tags \
+            "https://github.com/${{ github.repository }}.git" \
+            "refs/tags/$TAG" > /dev/null 2>&1; then
+            echo "Tag already exists: $TAG"
+            exit 1
+          fi
+
+      - name: Checkout pages repo
+        uses: actions/checkout@v4
+        with:
+          path: pages
+
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.source_owner }}/${{ inputs.source_repo_name }}
+          ref: ${{ inputs.source_ref }}
+          path: source
+
+      - name: Copy schema files
+        run: |
+          VERSION="${{ steps.version-suffix.outputs.suffix }}"
+          SOURCE="source/${{ inputs.source_schema_root }}/$VERSION"
+          TARGET="pages/${{ inputs.source_repo_name }}/$VERSION"
+
+          if [ ! -d "$SOURCE" ]; then
+            echo "Source directory does not exist: $SOURCE"
+            exit 1
+          fi
+
+          mkdir -p "$TARGET"
+          rm -rf "$TARGET"/*
+          cp -r "$SOURCE"/. "$TARGET"/
+
+      - name: Commit and tag changes
+        run: |
+          VERSION="${{ steps.version-suffix.outputs.suffix }}"
+          TAG="${{ inputs.source_repo_name }}-$VERSION"
+
+          cd pages
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add "${{ inputs.source_repo_name }}/$VERSION"
+
+          if git diff --cached --quiet; then
+            echo "No schema changes to publish."
+            exit 0
+          fi
+
+          git commit -m "Publish ${{ inputs.source_repo_name }} schemas from ${{ inputs.source_ref }}"
+
+          git tag "$TAG"
+          git push
+          git push origin "$TAG"

@@ -1,0 +1,35 @@
+name: Publish Schema
+
+on:
+  workflow_call:
+    inputs:
+      schema_root:
+        required: false
+        type: string
+        default: "schemas"
+        description: Relative path to repo directory containing schema versions.
+
+jobs:
+  trigger-pages-import:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ vars.TYPEFORGED_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TYPEFORGED_APP_PRIVATE_KEY }}
+          owner: typeforged
+          repositories: schema.registry
+
+      - name: Trigger TypeForged Schema Import
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh workflow run import-schema.yml \
+            --repo typeforged/schema.registry \
+            --ref main \
+            -f source_owner="${{ github.repository_owner }}" \
+            -f source_repo_name="${{ github.event.repository.name }}" \
+            -f source_ref="${{ github.ref_name }}" \
+            -f source_schema_root="${{ inputs.schema_root }}"
