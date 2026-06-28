@@ -35,18 +35,6 @@ jobs:
         uses: cmdforge/actions/version-suffix@main
         with:
           version: ${{ inputs.source_ref }}
-          
-      - name: Fail if publish tag already exists
-        run: |
-          VERSION="${{ steps.version-suffix.outputs.suffix }}"
-          TAG="${{ inputs.source_repo_name }}-$VERSION"
-
-          if git ls-remote --exit-code --tags \
-            "https://github.com/${{ github.repository }}.git" \
-            "refs/tags/$TAG" > /dev/null 2>&1; then
-            echo "Tag already exists: $TAG"
-            exit 1
-          fi
 
       - name: Checkout pages repo
         uses: actions/checkout@v4
@@ -94,6 +82,6 @@ jobs:
 
           git commit -m "Publish ${{ inputs.source_repo_name }} schemas from ${{ inputs.source_ref }}"
 
-          git tag "$TAG"
+          git tag -f "$TAG"
           git push
-          git push origin "$TAG"
+          git push --force origin "$TAG"
