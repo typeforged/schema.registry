@@ -1,0 +1,17 @@
+[
+  {
+    "project": "codex-plugin-marketplace",
+    "versions": {
+      "v1": [
+        {
+          "name": "Codex marketplace.json",
+          "path": "codex-plugin-marketplace/v1/marketplace.schema.json"
+        },
+        {
+          "name": "Codex plugin.json",
+          "path": "codex-plugin-marketplace/v1/plugin.schema.json"
+        }
+      ]
+    }
+  }
+]
