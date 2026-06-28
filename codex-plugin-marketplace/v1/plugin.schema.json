@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://typeforged.github.io/schema.registry/codex-plugin-marketplace/v1/plugin.schema.json",
+  "title": "Codex plugin.json",
+  "description": "Schema for a Codex plugin manifest. The manifest file is required at .codex-plugin/plugin.json. All component and asset paths in this file resolve relative to the plugin root, not relative to .codex-plugin/.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "name",
+    "version",
+    "description"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Stable kebab-case plugin identifier. Codex uses this as the plugin identifier and component namespace."
+    },
+    "version": {
+      "type": "string",
+      "description": "Plugin version, typically semver such as 1.0.0 or 0.1.0."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short package-level description identifying what the plugin bundles or enables."
+    },
+    "author": {
+      "description": "Publisher metadata.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Author, team, or organization name."
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Publisher contact email."
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Publisher homepage."
+            }
+          }
+        }
+      ]
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Plugin homepage or documentation URL."
+    },
+    "repository": {
+      "type": "string",
+      "description": "Source repository URL, for example a GitHub repository."
+    },
+    "license": {
+      "type": "string",
+      "description": "License identifier or license text reference, for example MIT."
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Discovery keywords for the plugin.",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "skills": {
+      "type": "string",
+      "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+      "description": "Path to bundled skill folders, commonly ./skills/. Skills themselves live under skills/<skill-name>/SKILL.md at the plugin root."
+    },
+    "mcpServers": {
+      "type": "string",
+      "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+      "description": "Path to an MCP server configuration file, commonly ./.mcp.json at the plugin root. The file may contain a direct server map or a wrapped mcp_servers object."
+    },
+    "apps": {
+      "type": "string",
+      "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+      "description": "Path to app or connector mappings, commonly ./.app.json at the plugin root."
+    },
+    "hooks": {
+      "description": "Lifecycle hook definition. If omitted, Codex automatically checks ./hooks/hooks.json. If provided, it may be a path, array of paths, inline hooks object, or array of inline hooks objects. Hook paths resolve relative to the plugin root and should start with ./.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+          "description": "Relative path from the plugin root. Codex guidance says manifest paths should start with ./ and stay inside the plugin root."
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+            "description": "Relative path from the plugin root. Codex guidance says manifest paths should start with ./ and stay inside the plugin root."
+          },
+          "minItems": 1
+        },
+        {
+          "type": "object",
+          "additionalProperties": true
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "minItems": 1
+        }
+      ]
+    },
+    "interface": {
+      "type": "object",
+      "description": "Install-surface metadata controlling how Codex presents the plugin.",
+      "additionalProperties": true,
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable plugin title shown in Codex."
+        },
+        "shortDescription": {
+          "type": "string",
+          "description": "Brief install-surface description."
+        },
+        "longDescription": {
+          "type": "string",
+          "description": "Longer install-surface description."
+        },
+        "developerName": {
+          "type": "string",
+          "description": "Developer, team, or organization shown to users."
+        },
+        "category": {
+          "type": "string",
+          "description": "Marketplace/category label, for example Productivity."
+        },
+        "capabilities": {
+          "type": "array",
+          "description": "Capability labels shown to users, for example Read or Write.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "websiteURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "Website URL shown in install surfaces."
+        },
+        "privacyPolicyURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "Privacy policy URL shown in install surfaces."
+        },
+        "termsOfServiceURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "Terms of service URL shown in install surfaces."
+        },
+        "defaultPrompt": {
+          "description": "Starter prompt or prompts users can run with the plugin.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "brandColor": {
+          "type": "string",
+          "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$",
+          "description": "Brand color as a hex color."
+        },
+        "composerIcon": {
+          "type": "string",
+          "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+          "description": "Path to composer icon asset, commonly under ./assets/."
+        },
+        "logo": {
+          "type": "string",
+          "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+          "description": "Path to logo asset, commonly under ./assets/."
+        },
+        "screenshots": {
+          "type": "array",
+          "description": "Screenshot asset paths, commonly under ./assets/.",
+          "items": {
+            "type": "string",
+            "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+            "description": "Relative path from the plugin root. Codex guidance says manifest paths should start with ./ and stay inside the plugin root."
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

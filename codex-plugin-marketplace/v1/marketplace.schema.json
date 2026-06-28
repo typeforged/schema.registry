@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://typeforged.github.io/schema.registry/codex-plugin-marketplace/v1/marketplace.schema.json",
+  "title": "Codex marketplace.json",
+  "description": "Schema for a Codex plugin marketplace catalog. Repo marketplaces go at $REPO_ROOT/.agents/plugins/marketplace.json; personal marketplaces go at ~/.agents/plugins/marketplace.json. The file controls plugin ordering and install policies in Codex-facing catalogs.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "name",
+    "plugins"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Marketplace identifier. Codex uses this to identify the marketplace."
+    },
+    "interface": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Marketplace presentation metadata.",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Marketplace title shown in Codex."
+        }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Curated plugin entries shown under this marketplace title. Add one object per plugin.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "name",
+          "source",
+          "policy",
+          "category"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Plugin identifier, normally matching the plugin manifest name."
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "source"
+            ],
+            "description": "Where Codex loads the plugin from. For local plugins use source=local and path like ./plugins/<plugin-name>. For Git plugins use source=url or source=git-subdir.",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": [
+                  "local",
+                  "url",
+                  "git-subdir"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^\\./(?!\\.\\.)(?!.*(?:^|/)\\.\\.(?:/|$)).+",
+                "description": "Relative path from the marketplace root. Must start with ./ and stay inside the marketplace root."
+              },
+              "url": {
+                "type": "string",
+                "description": "Git URL for url or git-subdir sources."
+              },
+              "ref": {
+                "type": "string",
+                "description": "Optional Git ref selector, such as main."
+              },
+              "sha": {
+                "type": "string",
+                "description": "Optional Git SHA selector."
+              }
+            }
+          },
+          "policy": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "installation",
+              "authentication"
+            ],
+            "properties": {
+              "installation": {
+                "type": "string",
+                "enum": [
+                  "AVAILABLE",
+                  "INSTALLED_BY_DEFAULT",
+                  "NOT_AVAILABLE"
+                ]
+              },
+              "authentication": {
+                "type": "string",
+                "enum": [
+                  "ON_INSTALL",
+                  "ON_USE"
+                ]
+              }
+            }
+          },
+          "category": {
+            "type": "string"
+          },
+          "interface": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "displayName": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
