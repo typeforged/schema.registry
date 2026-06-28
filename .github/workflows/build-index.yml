@@ -1,0 +1,97 @@
+name: Build schema index
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate index.json
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const path = require("path");
+
+          const root = process.cwd();
+          const ignore = new Set([".git", ".github", "node_modules"]);
+          const projects = new Map();
+
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (ignore.has(entry.name)) continue;
+
+              const full = path.join(dir, entry.name);
+              const rel = path.relative(root, full).replaceAll(path.sep, "/");
+
+              if (entry.isDirectory()) {
+                walk(full);
+                continue;
+              }
+
+              if (!entry.isFile() || !entry.name.endsWith(".schema.json")) continue;
+
+              const parts = rel.split("/");
+              if (parts.length < 3) return;
+
+              const [project, version] = parts;
+
+              let json = {};
+              try {
+                json = JSON.parse(fs.readFileSync(full, "utf8"));
+              } catch {}
+
+              if (!projects.has(project)) {
+                projects.set(project, {
+                  project,
+                  versions: {}
+                });
+              }
+
+              const projectEntry = projects.get(project);
+              projectEntry.versions[version] ??= [];
+
+              projectEntry.versions[version].push({
+                name: json.title ?? path.basename(rel),
+                path: rel
+              });
+            }
+          }
+
+          walk(root);
+
+          const index = [...projects.values()]
+            .sort((a, b) => a.project.localeCompare(b.project));
+
+          for (const project of index) {
+            for (const version of Object.keys(project.versions)) {
+              project.versions[version].sort((a, b) => a.name.localeCompare(b.name));
+            }
+          }
+
+          fs.writeFileSync("index.json", JSON.stringify(index, null, 2) + "\n");
+          NODE
+
+      - name: Commit index.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add index.json
+
+          if git diff --cached --quiet; then
+            echo "index.json unchanged"
+            exit 0
+          fi
+
+          git commit -m "Generate schema index for $GITHUB_REF_NAME"
+          git push origin HEAD:main
